@@ -15,16 +15,11 @@ LPTSTR mapCodeToText(int code){
     if (code==VK_F1) {return "Firefox";}
     if (code==VK_F3) {return "Chrome";}
     if (code==VK_F4) {return "cmd";}
+    if (code==VK_F7) {return "MINGW";}
     if (code==VK_F6) {return "Sky";}
     if (code==VK_F5) {return "PyCharm";}
     printf("ret null");
     return NULL;
-}
-BOOL contains(LPTSTR caption,LPTSTR te){
-    if( strstr(caption, te) != NULL) {
-        return TRUE;
-    }
-    return FALSE;
 }
 
 BOOL CALLBACK EnumWindowsProc(HWND hwnd,  LPARAM lParam){
@@ -49,50 +44,51 @@ void press(int code, BOOL up){
     input.ki.dwFlags = 0;
     SendInput(1, &input, sizeof(INPUT));
     if (up)
-    input.ki.dwFlags = KEYEVENTF_KEYUP;
+        input.ki.dwFlags = KEYEVENTF_KEYUP;
     SendInput(1, &input, sizeof(INPUT));
 }
 
 void pressCtrlCode(int code){
-        press(VK_LCONTROL, FALSE);
-        press(code,TRUE);
-        press(VK_LCONTROL,TRUE);
+    press(VK_LCONTROL, FALSE);
+    press(code,TRUE);
+    press(VK_LCONTROL,TRUE);
 }
 
 LRESULT CALLBACK HookProcedure2(int nCode, WPARAM wParam, LPARAM lParam) {
     KBDLLHOOKSTRUCT *p = (KBDLLHOOKSTRUCT *)lParam;
     if (nCode == HC_ACTION)
     {
-           printf("code %lu\n", p->vkCode);
+        printf("code %lu\n", p->vkCode);
         LPTSTR te= mapCodeToText(p->vkCode);
         if(te != NULL && GetAsyncKeyState(VK_LSHIFT)){
             press(VK_LSHIFT,TRUE);
             printf("%s mapped to %lu\n", te, p->vkCode);
             EnumWindows(&EnumWindowsProc, (LPARAM)te);
+
             return -1;
         }
         else{
-        if (p->vkCode==VK_F11)
-        {
-            press(VK_LSHIFT,TRUE);
-            pressCtrlCode('T');
-            return -1;
-        }
-                if (p->vkCode==VK_F8)
-                {
-                                    press(VK_LSHIFT,TRUE);
-                    press(VK_LMENU,FALSE);
-                    press(VK_TAB,TRUE);
-                    pressCtrlCode('T');
-                    return -1;
-                }
-        if (p->vkCode==VK_F2)
-                {
-                    press(VK_LSHIFT,TRUE);
-                    UnhookWindowsHookEx(KeyboardHook);
-                    exit(0);
-                    return -1;
-                }
+            if (p->vkCode==VK_F11)
+            {
+                press(VK_LSHIFT,TRUE);
+                press(VK_LWIN,TRUE);
+                return -1;
+            }
+            if (p->vkCode==VK_F8)
+            {
+                press(VK_LSHIFT,TRUE);
+                press(VK_LMENU,FALSE);
+                press(VK_TAB,TRUE);
+                pressCtrlCode('T');
+                return -1;
+            }
+            if (p->vkCode==VK_F2)
+            {
+                press(VK_LSHIFT,TRUE);
+                UnhookWindowsHookEx(KeyboardHook);
+                exit(0);
+                return -1;
+            }
         }
     }
     return CallNextHookEx(NULL, nCode, wParam, lParam);
@@ -107,13 +103,13 @@ int main (void) {
             GetModuleHandle(NULL),
             0
             );
-        MSG Msg;
-        while (GetMessage(&Msg, NULL, 0, 0) > 0)
-        {
-            TranslateMessage(&Msg);
-            DispatchMessage(&Msg);
-        }
-        printf("unhook\n");
-        UnhookWindowsHookEx(KeyboardHook);
+    MSG Msg;
+    while (GetMessage(&Msg, NULL, 0, 0) > 0)
+    {
+        TranslateMessage(&Msg);
+        DispatchMessage(&Msg);
+    }
+    printf("unhook\n");
+    UnhookWindowsHookEx(KeyboardHook);
     return 0;
 }
